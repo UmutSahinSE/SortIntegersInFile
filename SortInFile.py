@@ -1,13 +1,18 @@
 import os
 
-# def merge(files, step, listSize):
 
+def retreive(onelinerNumber):
+    with open(fileNames[onelinerNumber], 'r') as line:
+        line = [x.strip() for x in line]
+        for retrievedLine in line:
+            return [int(n) for n in retrievedLine.split()]
 
 
 numberOfLines = sum(1 for line in open("integers.txt"))
 oneLiners = []
 fileNames = []
 linecounter = 0
+# open integers.txt and sort, save each line to different oneliners
 with open("integers.txt") as intfile:
     for line in intfile:
         lineAsList = [int(n) for n in line.split()]
@@ -21,24 +26,41 @@ with open("integers.txt") as intfile:
         oneLiners[linecounter].flush()
         oneLiners[linecounter].close()
         linecounter += 1
+###################################################################
 
-for loop in range(0, int((numberOfLines + 1) / 2)):
-    leftStart = 0
-    step = 2 ** loop
+# now we have to merge these oneliners without wasting too much memory, first we merge two neighbor oneliners.
+# The resulting line will have length of 2 oneliners. We have to divide the result into 2 files.
+# After that we will take two sorted file groups and merge them until we have a sorted list across all files
+
+for loop in range(0, int((numberOfLines + 1) / 2)):  # to calculate how many merges we require before a full sorted list
+    leftStart = 0  # first file of left file group
+    step = 2 ** loop  # to calculate the size of file groups
+    rightStart = leftStart + step  # first file of right file group
+    cursor1 = 0  # shows which index of list we are working with
+    cursor2 = 0
+    listOfGroupLeft = 0  # to calculate which file of group we are working with
+    listOfGroupRight = 0
+    line1 = retreive(leftStart)  # first files of two groups into lines
+    line2 = retreive(rightStart)
     while leftStart + step < numberOfLines:  # if there can't be any right list, stop
-        rightStart = leftStart + step
-        file1 = oneLiners[leftStart]
-        file2 = oneLiners[rightStart]
-        with open(fileNames[leftStart], 'r') as line:
-            line = [x.strip() for x in line]
-            for line1 in line:
-                line1 = [int(n) for n in line1.split()]
-        with open(fileNames[rightStart], 'r') as line:
-            line = [x.strip() for x in line]
-            for line2 in line:
-                line2 = [int(n) for n in line2.split()]
-        iterator1 = 0
-        iterator2 = 0
+
+        # Check if one of the lists have exhausted if so refresh it by retrieving another from next file of respective
+        # group
+
+        if cursor1 == len(line1):
+            listOfGroupLeft += 1
+            line1 = retreive(leftStart+listOfGroupLeft)
+            cursor1 = 0
+        if cursor2 == len(line2):
+            listOfGroupRight += 1
+            line2 = retreive(rightStart+listOfGroupRight)
+            cursor2 = 0
+
+        ###################################################################
+
+        # now we must merge these two lists and store the result into another list. When we merge, we have to track
+        # how many numbers we took from each group. When the number of took numbers hits the size of list in oneliner,
+        # we update list of that group by retrieving next oneliner.
         listcntr1 = leftStart
         listcntr2 = rightStart
         mergedList = []
